@@ -1,0 +1,1496 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Dungeon as a Service",
+    "description": "\nMoteur de jeu de **Dungeon as a Service**, le rpg rétro du studio *Pixel Crypt*.\n\n1. créez un compte (`/auth/register`) puis cliquez sur **Authorize** ;\n2. créez un héros, explorez le donjon salle par salle ;\n3. survivez jusqu'à la salle du trône et terrassez la Liche.\n\nToutes les erreurs métier suivent le format `{\"detail\": {\"error\": \"CODE\", \"message\": \"...\"}}`.\n",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Système"
+        ],
+        "summary": "État du serveur",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthRead"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/leaderboard": {
+      "get": {
+        "tags": [
+          "Classement"
+        ],
+        "summary": "Top 10 des héros",
+        "description": "Route publique : les vainqueurs de la Liche d'abord, puis par or amassé.",
+        "operationId": "leaderboard_leaderboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EntreeClassement"
+                  },
+                  "type": "array",
+                  "title": "Response Leaderboard Leaderboard Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Créer un compte joueur",
+        "operationId": "register_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerRead"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Se connecter et obtenir un token JWT",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Authentification"
+        ],
+        "summary": "Joueur connecté",
+        "operationId": "me_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/heroes": {
+      "get": {
+        "tags": [
+          "Héros"
+        ],
+        "summary": "Lister mes héros",
+        "operationId": "list_heroes_heroes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HeroRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Heroes Heroes Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Héros"
+        ],
+        "summary": "Créer un héros",
+        "description": "Le héros apparaît dans la salle de départ, PV au maximum. Les trois statistiques (1 à 8) doivent totaliser exactement 10.",
+        "operationId": "create_hero_heroes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HeroCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeroRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/heroes/{hero_id}": {
+      "get": {
+        "tags": [
+          "Héros"
+        ],
+        "summary": "Consulter un héros",
+        "operationId": "get_hero_heroes__hero_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Identifiant du héros",
+              "title": "Hero Id"
+            },
+            "description": "Identifiant du héros"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeroRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/heroes/{hero_id}/room": {
+      "get": {
+        "tags": [
+          "Exploration"
+        ],
+        "summary": "Décrire la salle du héros",
+        "operationId": "get_room_heroes__hero_id__room_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Identifiant du héros",
+              "title": "Hero Id"
+            },
+            "description": "Identifiant du héros"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalleRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/heroes/{hero_id}/move": {
+      "post": {
+        "tags": [
+          "Exploration"
+        ],
+        "summary": "Se déplacer",
+        "description": "Entrer dans une salle hantée réveille son monstre (le donjon est maudit).",
+        "operationId": "move_heroes__hero_id__move_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Identifiant du héros",
+              "title": "Hero Id"
+            },
+            "description": "Identifiant du héros"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalleRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/heroes/{hero_id}/map": {
+      "get": {
+        "tags": [
+          "Exploration"
+        ],
+        "summary": "Carte des salles découvertes",
+        "description": "Brouillard de guerre : seules les salles visitées sont révélées.",
+        "operationId": "get_map_heroes__hero_id__map_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Identifiant du héros",
+              "title": "Hero Id"
+            },
+            "description": "Identifiant du héros"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarteRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/heroes/{hero_id}/attack": {
+      "post": {
+        "tags": [
+          "Combat"
+        ],
+        "summary": "Jouer un tour de combat",
+        "description": "Le héros frappe en premier ; si le monstre survit, il riposte.",
+        "operationId": "attack_heroes__hero_id__attack_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Identifiant du héros",
+              "title": "Hero Id"
+            },
+            "description": "Identifiant du héros"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttackResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/heroes/{hero_id}/rest": {
+      "post": {
+        "tags": [
+          "Combat"
+        ],
+        "summary": "Se reposer (3 secondes)",
+        "description": "Route asynchrone : le serveur continue de répondre pendant la sieste.",
+        "operationId": "rest_heroes__hero_id__rest_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hero_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Identifiant du héros",
+              "title": "Hero Id"
+            },
+            "description": "Identifiant du héros"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeroRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErreurReponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AttackResult": {
+        "properties": {
+          "degats_infliges": {
+            "type": "integer",
+            "title": "Degats Infliges"
+          },
+          "critique": {
+            "type": "boolean",
+            "title": "Critique"
+          },
+          "degats_subis": {
+            "type": "integer",
+            "title": "Degats Subis"
+          },
+          "pv_heros": {
+            "type": "integer",
+            "title": "Pv Heros"
+          },
+          "pv_monstre": {
+            "type": "integer",
+            "title": "Pv Monstre"
+          },
+          "issue": {
+            "$ref": "#/components/schemas/Issue"
+          },
+          "or_gagne": {
+            "type": "integer",
+            "title": "Or Gagne"
+          },
+          "victoire": {
+            "type": "boolean",
+            "title": "Victoire"
+          },
+          "recit": {
+            "type": "string",
+            "title": "Recit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "degats_infliges",
+          "critique",
+          "degats_subis",
+          "pv_heros",
+          "pv_monstre",
+          "issue",
+          "or_gagne",
+          "victoire",
+          "recit"
+        ],
+        "title": "AttackResult"
+      },
+      "Body_login_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_auth_login_post"
+      },
+      "CarteRead": {
+        "properties": {
+          "depart": {
+            "type": "string",
+            "title": "Depart"
+          },
+          "position": {
+            "type": "string",
+            "title": "Position"
+          },
+          "salles": {
+            "items": {
+              "$ref": "#/components/schemas/SalleCarte"
+            },
+            "type": "array",
+            "title": "Salles"
+          },
+          "explorees": {
+            "type": "integer",
+            "title": "Explorees"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "depart",
+          "position",
+          "salles",
+          "explorees",
+          "total"
+        ],
+        "title": "CarteRead"
+      },
+      "Classe": {
+        "type": "string",
+        "enum": [
+          "guerrier",
+          "mage",
+          "voleur"
+        ],
+        "title": "Classe"
+      },
+      "Direction": {
+        "type": "string",
+        "enum": [
+          "nord",
+          "sud",
+          "est",
+          "ouest"
+        ],
+        "title": "Direction"
+      },
+      "EntreeClassement": {
+        "properties": {
+          "rang": {
+            "type": "integer",
+            "title": "Rang"
+          },
+          "nom": {
+            "type": "string",
+            "title": "Nom"
+          },
+          "classe": {
+            "$ref": "#/components/schemas/Classe"
+          },
+          "joueur": {
+            "type": "string",
+            "title": "Joueur"
+          },
+          "or": {
+            "type": "integer",
+            "title": "Or"
+          },
+          "victoire": {
+            "type": "boolean",
+            "title": "Victoire"
+          },
+          "est_vivant": {
+            "type": "boolean",
+            "title": "Est Vivant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rang",
+          "nom",
+          "classe",
+          "joueur",
+          "or",
+          "victoire",
+          "est_vivant"
+        ],
+        "title": "EntreeClassement"
+      },
+      "ErreurDetail": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "title": "ErreurDetail"
+      },
+      "ErreurReponse": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/ErreurDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "ErreurReponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthRead": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ok"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Le donjon vous attend..."
+          }
+        },
+        "type": "object",
+        "title": "HealthRead"
+      },
+      "HeroCreate": {
+        "properties": {
+          "nom": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 3,
+            "title": "Nom"
+          },
+          "classe": {
+            "$ref": "#/components/schemas/Classe"
+          },
+          "force": {
+            "type": "integer",
+            "maximum": 8.0,
+            "minimum": 1.0,
+            "title": "Force"
+          },
+          "agilite": {
+            "type": "integer",
+            "maximum": 8.0,
+            "minimum": 1.0,
+            "title": "Agilite"
+          },
+          "intelligence": {
+            "type": "integer",
+            "maximum": 8.0,
+            "minimum": 1.0,
+            "title": "Intelligence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nom",
+          "classe",
+          "force",
+          "agilite",
+          "intelligence"
+        ],
+        "title": "HeroCreate",
+        "examples": [
+          {
+            "agilite": 2,
+            "classe": "guerrier",
+            "force": 6,
+            "intelligence": 2,
+            "nom": "Aragorn"
+          }
+        ]
+      },
+      "HeroRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nom": {
+            "type": "string",
+            "title": "Nom"
+          },
+          "classe": {
+            "$ref": "#/components/schemas/Classe"
+          },
+          "force": {
+            "type": "integer",
+            "title": "Force"
+          },
+          "agilite": {
+            "type": "integer",
+            "title": "Agilite"
+          },
+          "intelligence": {
+            "type": "integer",
+            "title": "Intelligence"
+          },
+          "pv": {
+            "type": "integer",
+            "title": "Pv"
+          },
+          "pv_max": {
+            "type": "integer",
+            "title": "Pv Max"
+          },
+          "salle_actuelle": {
+            "type": "string",
+            "title": "Salle Actuelle"
+          },
+          "or": {
+            "type": "integer",
+            "title": "Or"
+          },
+          "victoire": {
+            "type": "boolean",
+            "title": "Victoire"
+          },
+          "en_combat": {
+            "type": "boolean",
+            "title": "En Combat"
+          },
+          "est_vivant": {
+            "type": "boolean",
+            "title": "Est Vivant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nom",
+          "classe",
+          "force",
+          "agilite",
+          "intelligence",
+          "pv",
+          "pv_max",
+          "salle_actuelle",
+          "or",
+          "victoire",
+          "en_combat",
+          "est_vivant"
+        ],
+        "title": "HeroRead"
+      },
+      "Issue": {
+        "type": "string",
+        "enum": [
+          "en_cours",
+          "monstre_vaincu",
+          "heros_mort"
+        ],
+        "title": "Issue"
+      },
+      "MonstreRead": {
+        "properties": {
+          "nom": {
+            "type": "string",
+            "title": "Nom"
+          },
+          "pv": {
+            "type": "integer",
+            "title": "Pv"
+          },
+          "pv_max": {
+            "type": "integer",
+            "title": "Pv Max"
+          },
+          "attaque": {
+            "type": "integer",
+            "title": "Attaque"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nom",
+          "pv",
+          "pv_max",
+          "attaque"
+        ],
+        "title": "MonstreRead"
+      },
+      "MoveRequest": {
+        "properties": {
+          "direction": {
+            "$ref": "#/components/schemas/Direction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "direction"
+        ],
+        "title": "MoveRequest",
+        "examples": [
+          {
+            "direction": "nord"
+          }
+        ]
+      },
+      "PlayerCreate": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 3,
+            "pattern": "^[\\w.-]+$",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 6,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "PlayerCreate",
+        "examples": [
+          {
+            "password": "anneau-unique",
+            "username": "frodon"
+          }
+        ]
+      },
+      "PlayerRead": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username"
+        ],
+        "title": "PlayerRead"
+      },
+      "SalleCarte": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nom": {
+            "type": "string",
+            "title": "Nom"
+          },
+          "hantee": {
+            "type": "boolean",
+            "title": "Hantee"
+          },
+          "sorties": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Sorties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nom",
+          "hantee",
+          "sorties"
+        ],
+        "title": "SalleCarte"
+      },
+      "SalleRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nom": {
+            "type": "string",
+            "title": "Nom"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "sorties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sorties"
+          },
+          "monstre": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MonstreRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "salle_finale": {
+            "type": "boolean",
+            "title": "Salle Finale",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nom",
+          "description",
+          "sorties"
+        ],
+        "title": "SalleRead"
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "Token"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "auth/login"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentification",
+      "description": "Comptes joueurs et tokens JWT."
+    },
+    {
+      "name": "Héros",
+      "description": "Création et consultation de vos héros."
+    },
+    {
+      "name": "Exploration",
+      "description": "Salles, déplacements et carte du donjon."
+    },
+    {
+      "name": "Combat",
+      "description": "Tours de combat et repos."
+    },
+    {
+      "name": "Classement",
+      "description": "Le panthéon de Pixel Crypt."
+    },
+    {
+      "name": "Système",
+      "description": "Santé du serveur."
+    }
+  ]
+}
