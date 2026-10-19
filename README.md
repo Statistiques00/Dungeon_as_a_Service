@@ -239,7 +239,7 @@ Chaque création, déplacement, tour de combat, repos et inscription est tracé 
 ## Notre rendu
 
 - **Membres du groupe :** D'Amore Théo, Briki Ilian
-- **Lien du dépôt Git :** _https://github.com/…/dungeon-api_
+- **Lien du dépôt Git :** _https://github.com/Statistiques00/Dungeon_as_a_Service_
 - **Palier atteint :** 4 (les quatre validations Swagger passent)
 - **Bonus réalisés :** B-1 client terminal, B-2 classement, B-3 tests (31 tests pytest), B-4 PostgreSQL, B-5 journalisation
 - **Ce qui ne fonctionne pas / difficultés :**
